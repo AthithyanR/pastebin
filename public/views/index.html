@@ -1,0 +1,26 @@
+{{define "index"}}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pastebin</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5xLSi8nO7UC" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div id="pastes" style="display: flex; flex-direction: column;">
+        {{range .}}
+				<a href="/paste/{{.}}">{{.}}</a>
+		{{end}}
+    </div>
+    <br />
+    <form hx-post="/paste" hx-target="#pastes" hx-swap="afterbegin" hx-on::after-request="this.reset()">
+        <textarea name="content" cols="100" rows="30"></textarea>
+        <button type="submit">Submit</button>
+    </form>
+</body>
+
+</html>
+{{end}}

@@ -1,0 +1,5 @@
+# Will run ./tmp/main bench
+air bench
+
+# Will run ./tmp/main server --port 8080
+air server --port 8080
