@@ -12,6 +12,11 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
+const (
+	gitKeepFileName = ".gitkeep"
+	pastesDirName   = "pastes"
+)
+
 type Template struct {
 	templates *template.Template
 }
@@ -39,13 +44,16 @@ func main() {
 }
 
 func index(c echo.Context) error {
-	dirEntry, err := os.ReadDir("pastes")
+	dirEntry, err := os.ReadDir(pastesDirName)
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		return c.String(http.StatusInternalServerError, "Unable to fetch the pastes!")
 	}
 
 	var pastes []string
 	for _, entry := range dirEntry {
+		if entry.Name() == gitKeepFileName {
+			continue
+		}
 		pastes = append(pastes, entry.Name())
 	}
 	return c.Render(http.StatusOK, "index", pastes)
@@ -53,9 +61,18 @@ func index(c echo.Context) error {
 
 func getPaste(c echo.Context) error {
 	contentId := c.Param("id")
-	content, err := os.ReadFile(fmt.Sprintf("pastes/%s", contentId))
+	if contentId == gitKeepFileName {
+		return c.String(http.StatusNotFound, "Paste not found!")
+	}
+
+	filePath := fmt.Sprintf("%s/%s", pastesDirName, contentId)
+	content, err := os.ReadFile(filePath)
+
 	if err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+		if os.IsNotExist(err) {
+			return c.String(http.StatusNotFound, "Paste not found!")
+		}
+		return c.String(http.StatusInternalServerError, "Unable to fetch the paste!")
 	}
 
 	return c.String(http.StatusOK, string(content))
@@ -65,8 +82,9 @@ func postPaste(c echo.Context) error {
 	content := c.FormValue("content")
 	contentId := uuid.New().String()
 
-	if err := os.WriteFile(fmt.Sprintf("pastes/%s", contentId), []byte(content), 0644); err != nil {
-		return c.String(http.StatusInternalServerError, err.Error())
+	filePath := fmt.Sprintf("%s/%s", pastesDirName, contentId)
+	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+		return c.String(http.StatusInternalServerError, "Unable to write the paste!")
 	}
 
 	return c.String(http.StatusOK, fmt.Sprintf("<a href=\"/paste/%s\">%s<a>", contentId, contentId))
